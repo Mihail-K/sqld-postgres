@@ -1,0 +1,6 @@
+name "sqld-postgres"
+description "PostgreSQL generators for SQLD."
+authors "Mihail K"
+copyright "Copyright © 2017, Mihail K"
+license "MIT"
+dependency "sqld" path="../sqld"
