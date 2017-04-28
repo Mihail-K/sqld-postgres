@@ -54,9 +54,13 @@ public:
 
     void visit(immutable(BinaryNode) node)
     {
+        if(node.operator == BinaryOperator.or) _buffer ~= "(";
         node.left.accept(this);
+        if(node.operator == BinaryOperator.or) _buffer ~= ")";
         _buffer ~= " " ~ node.operator ~ " ";
+        if(node.operator == BinaryOperator.or) _buffer ~= "(";
         node.right.accept(this);
+        if(node.operator == BinaryOperator.or) _buffer ~= ")";
     }
 
     void visit(immutable(ColumnNode) node)
@@ -229,6 +233,18 @@ public:
         node.partitions.accept(this);
     }
 
+    void visit(immutable(PostfixNode) node)
+    {
+        node.operand.accept(this);
+        _buffer ~= " " ~ node.operator;
+    }
+
+    void visit(immutable(PrefixNode) node)
+    {
+        _buffer ~= node.operator ~ " ";
+        node.operand.accept(this);
+    }
+
     void visit(immutable(ProjectionNode) node)
     {
         node.projections.accept(this);
@@ -299,12 +315,6 @@ public:
         }
 
         _buffer ~= node.name;
-    }
-
-    void visit(immutable(UnaryNode) node)
-    {
-        _buffer ~= node.operator ~ " ";
-        node.operand.accept(this);
     }
 
     void visit(immutable(UnionNode) node)
@@ -509,6 +519,28 @@ private:
 
     n.accept(v);
     assert(v.sql == "users.id = users.user_id");
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto u = TableNode("users");
+    auto p = TableNode("posts");
+    auto n = u["id"].eq(p["user_id"]).and(p["deleted"].eq(false));
+
+    n.accept(v);
+    assert(v.sql == "users.id = posts.user_id AND posts.deleted = 'f'");
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto u = TableNode("users");
+    auto p = TableNode("posts");
+    auto n = u["id"].eq(p["user_id"]).or(p["id"].isNull);
+
+    n.accept(v);
+    assert(v.sql == "(users.id = posts.user_id) OR (posts.id IS NULL)");
 }
 
 @system unittest
