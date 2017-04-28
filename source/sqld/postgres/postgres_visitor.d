@@ -532,6 +532,18 @@ private:
 
 @system unittest
 {
+    import sqld.select_builder : SelectBuilder;
+
+    auto v = new PostgresVisitor;
+    auto u = TableNode("users");
+    auto n = new immutable FromNode(SelectBuilder.init.from(u));
+
+    n.accept(v);
+    assert(v.sql == "FROM (SELECT FROM users)");
+}
+
+@system unittest
+{
     auto v = new PostgresVisitor;
     auto u = TableNode("users");
     auto n = new immutable OrderByNode(u["name"].asc, u["email"].desc, u["created_at"].asc);
