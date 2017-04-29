@@ -52,3 +52,23 @@ public:
         _parameters ~= literal(node.value);
     }
 }
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto n = new immutable ParameterNode(literal(5));
+
+    n.accept(v);
+    assert(v.sql == "5");
+}
+
+@system unittest
+{
+    auto v = new PostgresPreparedVisitor;
+    auto n = new immutable ParameterNode(literal(5));
+
+    n.accept(v);
+    assert(v.sql == "$1");
+    assert(v.parameters == ["5"]);
+    assert(v.preparedSQL == PreparedSQL("$1", ["5"]));
+}
