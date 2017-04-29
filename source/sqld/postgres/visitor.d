@@ -56,7 +56,9 @@ public:
         if(node.operator == BinaryOperator.or) _buffer ~= "(";
         node.left.accept(this);
         if(node.operator == BinaryOperator.or) _buffer ~= ")";
-        _buffer ~= " " ~ node.operator ~ " ";
+
+        _buffer ~= " " ~ parseBinaryOperator(node.operator) ~ " ";
+
         if(node.operator == BinaryOperator.or) _buffer ~= "(";
         node.right.accept(this);
         if(node.operator == BinaryOperator.or) _buffer ~= ")";
@@ -445,6 +447,11 @@ protected:
 
         return keyword;
     }
+
+    string parseBinaryOperator(BinaryOperator operator)
+    {
+        return operator == BinaryOperator.bitXor ? "#" : cast(string) operator;
+    }
 }
 
 @system unittest
@@ -525,11 +532,11 @@ protected:
 
 @system unittest
 {
-    import sqld.select_builder : SelectBuilder;
+    import sqld : SQLD;
 
     auto v = new PostgresVisitor;
     auto u = table("users");
-    auto n = new immutable FromNode(SelectBuilder.init.from(u));
+    auto n = new immutable FromNode(SQLD.select.from(u));
 
     n.accept(v);
     assert(v.sql == "FROM (SELECT FROM users)");
@@ -543,6 +550,24 @@ protected:
 
     n.accept(v);
     assert(v.sql == "INTO users(name, email, password)");
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto n = new immutable LimitNode(500);
+
+    n.accept(v);
+    assert(v.sql == "LIMIT 500");
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto n = new immutable OffsetNode(500);
+
+    n.accept(v);
+    assert(v.sql == "OFFSET 500");
 }
 
 @system unittest
