@@ -1,5 +1,5 @@
 
-module sqld.postgres.postgres_visitor;
+module sqld.postgres.visitor;
 
 import sqld.ast;
 import sqld.postgres.escape;
@@ -12,7 +12,7 @@ import std.traits;
 
 class PostgresVisitor : Visitor
 {
-private:
+protected:
     Appender!(string) _buffer;
 
 public:
@@ -193,14 +193,7 @@ public:
 
     void visit(immutable(LiteralNode) node)
     {
-        foreach(Type; LiteralTypes)
-        {
-            if(Type* value = node.value.peek!(Type))
-            {
-                _buffer ~= literal(*value);
-                return;
-            }
-        }
+        _buffer ~= literal(node);
     }
 
     void visit(immutable(NamedWindowNode) node)
@@ -225,6 +218,11 @@ public:
         node.subject.accept(this);
         _buffer ~= " OVER ";
         node.window.accept(this);
+    }
+
+    void visit(immutable(ParameterNode) node)
+    {
+        node.value.accept(this);
     }
 
     void visit(immutable(PartitionByNode) node)
@@ -423,7 +421,7 @@ public:
         _buffer ~= ")";
     }
 
-private:
+protected:
     string padded(string keyword)
     {
         if(_buffer.data.length > 0)
@@ -437,6 +435,19 @@ private:
         }
 
         return keyword;
+    }
+
+    string literal(T)(T node) if(is(T == immutable(LiteralNode)))
+    {
+        foreach(Type; LiteralTypes)
+        {
+            if(Type* value = node.value.peek!(Type))
+            {
+                return literal(*value);
+            }
+        }
+
+        assert(0, "Unsupported type: " ~ node.value.type.toString);
     }
 
     string literal(T)(T values) if(isArray!(T) && !isSomeString!(T))
