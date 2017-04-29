@@ -2,9 +2,8 @@
 module sqld.postgres.visitor;
 
 import sqld.ast;
-import sqld.postgres.escape;
+import sqld.postgres.format_literal;
 
-import std.algorithm;
 import std.array;
 import std.conv;
 import std.meta;
@@ -198,12 +197,12 @@ public:
 
     void visit(immutable(LimitNode) node)
     {
-        _buffer ~= padded("LIMIT ") ~ literal(node.limit);
+        _buffer ~= padded("LIMIT ") ~ formatLiteral(node.limit);
     }
 
     void visit(immutable(LiteralNode) node)
     {
-        _buffer ~= literal(node);
+        _buffer ~= formatLiteral(node);
     }
 
     void visit(immutable(NamedWindowNode) node)
@@ -214,7 +213,7 @@ public:
 
     void visit(immutable(OffsetNode) node)
     {
-        _buffer ~= padded("OFFSET ") ~ literal(node.offset);
+        _buffer ~= padded("OFFSET ") ~ formatLiteral(node.offset);
     }
 
     void visit(immutable(OrderByNode) node)
@@ -446,47 +445,6 @@ protected:
 
         return keyword;
     }
-
-    string literal(T)(T node) if(is(T == immutable(LiteralNode)))
-    {
-        foreach(Type; LiteralTypes)
-        {
-            if(Type* value = node.value.peek!(Type))
-            {
-                return literal(*value);
-            }
-        }
-
-        assert(0, "Unsupported type: " ~ node.value.type.toString);
-    }
-
-    string literal(T)(T values) if(isArray!(T) && !isSomeString!(T))
-    {
-        return "(" ~ values.map!(e => literal(e)).joiner(", ").to!(string) ~ ")";
-    }
-
-    string literal(T : bool)(T value)
-    {
-        return value ? "'t'" : "'f'";
-    }
-
-    string literal(T)(T value) if(isIntegral!(T))
-    {
-        return value.to!(string);
-    }
-
-    string literal(T)(T value) if(isFloatingPoint!(T))
-    {
-        import std.string : indexOf;
-
-        immutable auto result = value.to!(string);
-        return result.indexOf('.') == -1 ? result ~ ".0" : result;
-    }
-
-    string literal(T)(T value) if(isSomeString!(T))
-    {
-        return escapeString(value); // TODO : Escape.
-    }
 }
 
 @system unittest
@@ -502,24 +460,6 @@ protected:
 
     v._buffer ~= " ";
     assert(v.padded("foo") == "foo");
-}
-
-@system unittest
-{
-    auto v = new PostgresVisitor;
-    assert(v.literal(1) == "1");
-    assert(v.literal(123_456) == "123456");
-
-    assert(v.literal(123.45) == "123.45");
-    assert(v.literal(1.0) == "1.0");
-    assert(v.literal(1.99999) == "1.99999");
-
-    assert(v.literal(true) == "'t'");
-    assert(v.literal(false) == "'f'");
-
-    assert(v.literal([1, 2, 3, 4, 5]) == "(1, 2, 3, 4, 5)");
-    assert(v.literal([true, false]) == "('t', 'f')");
-    assert(v.literal([1.2, 2.3, 4.999]) == "(1.2, 2.3, 4.999)");
 }
 
 @system unittest

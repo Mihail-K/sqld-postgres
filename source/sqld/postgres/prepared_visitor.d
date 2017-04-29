@@ -2,6 +2,7 @@
 module sqld.postgres.prepared_visitor;
 
 import sqld.ast;
+import sqld.postgres.format_literal;
 import sqld.postgres.visitor;
 
 import std.conv;
@@ -49,7 +50,7 @@ public:
     override void visit(immutable(ParameterNode) node)
     {
         _buffer     ~= "$" ~ (_parameters.length + 1).to!(string);
-        _parameters ~= literal(node.value);
+        _parameters ~= formatLiteral(node.value);
     }
 }
 
