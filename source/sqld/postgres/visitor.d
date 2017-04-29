@@ -160,7 +160,17 @@ public:
         if(node.columns !is null)
         {
             _buffer ~= "(";
-            node.columns.accept(this);
+
+            foreach(index, column; node.columns)
+            {
+                column.accept(this);
+
+                if(index + 1 < node.columns.length)
+                {
+                    _buffer ~= ", ";
+                }
+            }
+
             _buffer ~= ")";
         }
     }
@@ -583,6 +593,16 @@ protected:
 
     n.accept(v);
     assert(v.sql == "FROM (SELECT FROM users)");
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto u = table("users");
+    auto n = new immutable IntoNode(u, u["name"], u["email"], u["password"]);
+
+    n.accept(v);
+    assert(v.sql == "INTO users(name, email, password)");
 }
 
 @system unittest
