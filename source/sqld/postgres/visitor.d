@@ -515,7 +515,7 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
+    auto u = table("users");
     auto n = u.as("test");
 
     n.accept(v);
@@ -525,7 +525,7 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
+    auto u = table("users");
     auto n = u["id"].eq(u["user_id"]);
 
     n.accept(v);
@@ -535,8 +535,8 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
-    auto p = TableNode("posts");
+    auto u = table("users");
+    auto p = table("posts");
     auto n = u["id"].eq(p["user_id"]).and(p["deleted"].eq(false));
 
     n.accept(v);
@@ -546,8 +546,8 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
-    auto p = TableNode("posts");
+    auto u = table("users");
+    auto p = table("posts");
     auto n = u["id"].eq(p["user_id"]).or(p["id"].isNull);
 
     n.accept(v);
@@ -557,7 +557,7 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
+    auto u = table("users");
     auto n = new immutable ExpressionListNode([u["id"], u["email"], u["name"]]);
 
     n.accept(v);
@@ -567,7 +567,7 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto n = new immutable FromNode(TableNode("users"));
+    auto n = new immutable FromNode(table("users"));
 
     n.accept(v);
     assert(v.sql == "FROM users");
@@ -578,7 +578,7 @@ protected:
     import sqld.select_builder : SelectBuilder;
 
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
+    auto u = table("users");
     auto n = new immutable FromNode(SelectBuilder.init.from(u));
 
     n.accept(v);
@@ -588,7 +588,7 @@ protected:
 @system unittest
 {
     auto v = new PostgresVisitor;
-    auto u = TableNode("users");
+    auto u = table("users");
     auto n = new immutable OrderByNode(u["name"].asc, u["email"].desc, u["created_at"].asc);
 
     n.accept(v);
