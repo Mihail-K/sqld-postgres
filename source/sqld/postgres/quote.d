@@ -7,12 +7,12 @@ import std.conv;
 import std.traits;
 
 @property
-string quoteName(string input)
+string quoteName(string input) @safe pure nothrow
 {
     return '"' ~ input.replace(`"`, `""`) ~ '"';
 }
 
-@system unittest
+@safe unittest
 {
     assert(quoteName("users") == `"users"`);
     assert(quoteName(`"tables"`) == `"""tables"""`);
@@ -20,7 +20,7 @@ string quoteName(string input)
 }
 
 @property
-string quoteReference(string input, size_t limit = size_t.max)
+string quoteReference(string input, size_t limit = size_t.max) pure
 {
     import std.range : tail;
 
@@ -42,7 +42,7 @@ string quoteReference(string input, size_t limit = size_t.max)
 }
 
 @property
-string quoteString(T)(T input) if(isSomeString!(T))
+string quoteString(T)(T input) @safe pure if(isSomeString!(T))
 {
     import std.string : translate;
 
@@ -60,7 +60,7 @@ string quoteString(T)(T input) if(isSomeString!(T))
     return result.to!(string);
 }
 
-@system unittest
+@safe unittest
 {
     assert(quoteString("potato") == "'potato'");
     assert(quoteString("john's") == "'john''s'");
