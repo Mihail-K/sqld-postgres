@@ -2,7 +2,7 @@
 module sqld.postgres.format_literal;
 
 import sqld.ast.literal_node;
-import sqld.postgres.escape;
+import sqld.postgres.quote;
 
 import std.algorithm;
 import std.array;

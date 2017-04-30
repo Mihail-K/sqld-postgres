@@ -2,6 +2,7 @@
 module sqld.postgres.visitor;
 
 import sqld.ast;
+import sqld.postgres.quote;
 import sqld.postgres.format_literal;
 
 import std.array;
@@ -31,7 +32,7 @@ public:
     void visit(immutable(AsNode) node)
     {
         node.node.accept(this);
-        _buffer ~= " AS " ~ node.name;
+        _buffer ~= " AS " ~ quoteName(node.name);
     }
 
     void visit(immutable(AssignmentNode) node)
@@ -66,7 +67,7 @@ public:
             _buffer ~= ".";
         }
 
-        _buffer ~= node.name;
+        _buffer ~= quoteName(node.name);
     }
 
     void visit(immutable(DeleteNode) node)
@@ -216,7 +217,7 @@ public:
 
     void visit(immutable(NamedWindowNode) node)
     {
-        _buffer ~= node.name ~ " AS ";
+        _buffer ~= quoteName(node.name) ~ " AS ";
         node.definition.accept(this);
     }
 
@@ -334,10 +335,10 @@ public:
     {
         if(node.schema !is null)
         {
-            _buffer ~= node.schema ~ ".";
+            _buffer ~= quoteName(node.schema) ~ ".";
         }
 
-        _buffer ~= node.name;
+        _buffer ~= quoteName(node.name);
     }
 
     void visit(immutable(UnionNode) node)
@@ -490,7 +491,7 @@ protected:
     auto n = u.as("test");
 
     n.accept(v);
-    assert(v.sql == "users AS test");
+    assert(v.sql == `"users" AS "test"`);
 }
 
 @system unittest
@@ -500,7 +501,7 @@ protected:
     auto n = u["id"].eq(u["user_id"]);
 
     n.accept(v);
-    assert(v.sql == "users.id = users.user_id");
+    assert(v.sql == `"users"."id" = "users"."user_id"`);
 }
 
 @system unittest
@@ -511,7 +512,7 @@ protected:
     auto n = u["id"].eq(p["user_id"]).and(p["deleted"].eq(false));
 
     n.accept(v);
-    assert(v.sql == "users.id = posts.user_id AND posts.deleted = 'f'");
+    assert(v.sql == `"users"."id" = "posts"."user_id" AND "posts"."deleted" = 'f'`);
 }
 
 @system unittest
@@ -522,7 +523,7 @@ protected:
     auto n = u["id"].eq(p["user_id"]).or(p["id"].isNull);
 
     n.accept(v);
-    assert(v.sql == "(users.id = posts.user_id) OR (posts.id IS NULL)");
+    assert(v.sql == `("users"."id" = "posts"."user_id") OR ("posts"."id" IS NULL)`);
 }
 
 @system unittest
@@ -532,7 +533,7 @@ protected:
     auto n = new immutable ExpressionListNode([u["id"], u["email"], u["name"]]);
 
     n.accept(v);
-    assert(v.sql == "users.id, users.email, users.name");
+    assert(v.sql == `"users"."id", "users"."email", "users"."name"`);
 }
 
 @system unittest
@@ -541,7 +542,7 @@ protected:
     auto n = new immutable FromNode(table("users"));
 
     n.accept(v);
-    assert(v.sql == "FROM users");
+    assert(v.sql == `FROM "users"`);
 }
 
 @system unittest
@@ -553,7 +554,7 @@ protected:
     auto n = new immutable FromNode(SQLD.select.from(u));
 
     n.accept(v);
-    assert(v.sql == "FROM (SELECT FROM users)");
+    assert(v.sql == `FROM (SELECT FROM "users")`);
 }
 
 @system unittest
@@ -563,7 +564,7 @@ protected:
     auto n = new immutable IntoNode(u, u["name"], u["email"], u["password"]);
 
     n.accept(v);
-    assert(v.sql == "INTO users(name, email, password)");
+    assert(v.sql == `INTO "users"("name", "email", "password")`);
 }
 
 @system unittest
@@ -591,5 +592,5 @@ protected:
     auto n = new immutable OrderByNode(u["name"].asc, u["email"].desc, u["created_at"].asc);
 
     n.accept(v);
-    assert(v.sql == "ORDER BY users.name ASC, users.email DESC, users.created_at ASC");
+    assert(v.sql == `ORDER BY "users"."name" ASC, "users"."email" DESC, "users"."created_at" ASC`);
 }
