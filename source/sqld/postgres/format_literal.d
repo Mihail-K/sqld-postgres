@@ -47,7 +47,7 @@ string formatLiteral(T)(T value) if(isFloatingPoint!(T))
 
 string formatLiteral(T)(T value) if(isSomeString!(T))
 {
-    return escapeString(value); // TODO : Escape.
+    return quoteString(value);
 }
 
 @system unittest
@@ -61,6 +61,9 @@ string formatLiteral(T)(T value) if(isSomeString!(T))
 
     assert(formatLiteral(true) == "'t'");
     assert(formatLiteral(false) == "'f'");
+
+    assert(formatLiteral("john") == "'john'");
+    assert(formatLiteral("jane's") == "'jane''s'");
 
     assert(formatLiteral([1, 2, 3, 4, 5]) == "(1, 2, 3, 4, 5)");
     assert(formatLiteral([true, false]) == "('t', 'f')");

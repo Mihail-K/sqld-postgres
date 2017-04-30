@@ -35,7 +35,28 @@ string quoteReference(string input)
 }
 
 @property
-string escapeString(string input)
+string quoteString(string input)
 {
-    return "'" ~ input ~ "'"; // TODO
+    import std.string : translate;
+
+    immutable string[dchar] table = [
+        '\b': `\b`,
+        '\f': `\f`,
+        '\n': `\n`,
+        '\r': `\r`,
+        '\t': `\t`,
+        '\'': `''`,
+        '\\': `\\`,
+    ];
+
+    return "'" ~ input.translate(table) ~ "'"; // TODO
+}
+
+@system unittest
+{
+    assert(quoteString("potato") == "'potato'");
+    assert(quoteString("john's") == "'john''s'");
+    assert(quoteString("a\nbook") == "'a\\nbook'");
+    assert(quoteString("danger\\") == "'danger\\\\'");
+    assert(quoteString("title\\\n") == "'title\\\\\\n'");
 }
