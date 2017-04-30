@@ -50,6 +50,11 @@ string formatLiteral(T)(T value) if(isSomeString!(T))
     return quoteString(value);
 }
 
+string formatLiteral(T)(T value) if(is(T : LiteralType))
+{
+    return value.sql;
+}
+
 @system unittest
 {
     assert(formatLiteral(1) == "1");
