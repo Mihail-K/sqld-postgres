@@ -4,6 +4,7 @@ module sqld.postgres.quote;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.traits;
 
 @property
 string quoteName(string input)
@@ -35,7 +36,7 @@ string quoteReference(string input)
 }
 
 @property
-string quoteString(string input)
+string quoteString(T)(T input) if(isSomeString!(T))
 {
     import std.string : translate;
 
@@ -46,10 +47,11 @@ string quoteString(string input)
         '\r': `\r`,
         '\t': `\t`,
         '\'': `''`,
-        '\\': `\\`,
+        '\\': `\\`
     ];
 
-    return "'" ~ input.translate(table) ~ "'"; // TODO
+    auto result = "'" ~ input.translate(table) ~ "'";
+    return result.to!(string);
 }
 
 @system unittest

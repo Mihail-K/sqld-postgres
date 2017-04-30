@@ -594,3 +594,12 @@ protected:
     n.accept(v);
     assert(v.sql == `ORDER BY "users"."name" ASC, "users"."email" DESC, "users"."created_at" ASC`);
 }
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto n = new immutable ValuesNode([toExpression(1), toExpression(true), toExpression("it's"), toExpression(1.5)]);
+
+    n.accept(v);
+    assert(v.sql == `VALUES (1, 't', 'it''s', 1.5)`);
+}
