@@ -2,8 +2,8 @@
 module sqld.postgres.visitor;
 
 import sqld.ast;
-import sqld.postgres.quote;
 import sqld.postgres.format_literal;
+import sqld.postgres.quote;
 
 import std.array;
 import std.conv;
@@ -155,18 +155,10 @@ public:
 
         if(node.columns !is null)
         {
-            _buffer ~= "(";
+            import std.algorithm : joiner, map;
 
-            foreach(index, column; node.columns)
-            {
-                column.accept(this);
-
-                if(index + 1 < node.columns.length)
-                {
-                    _buffer ~= ", ";
-                }
-            }
-
+            _buffer ~= "("; // Postgres doesn't allow fully-qualified names here.
+            _buffer ~= node.columns.map!(c => quoteName(c.name)).joiner(", ");
             _buffer ~= ")";
         }
     }
