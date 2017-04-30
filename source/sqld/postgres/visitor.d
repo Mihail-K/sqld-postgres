@@ -21,6 +21,13 @@ public:
         return _buffer.data;
     }
 
+    void visit(immutable(ArithmeticNode) node)
+    {
+        node.left.accept(this);
+        _buffer ~= " " ~ formatArithmeticOperator(node.operator) ~ " ";
+        node.right.accept(this);
+    }
+
     void visit(immutable(AsNode) node)
     {
         node.node.accept(this);
@@ -49,19 +56,6 @@ public:
         node.second.accept(this);
         _buffer ~= " AND ";
         node.third.accept(this);
-    }
-
-    void visit(immutable(BinaryNode) node)
-    {
-        if(node.operator == BinaryOperator.or) _buffer ~= "(";
-        node.left.accept(this);
-        if(node.operator == BinaryOperator.or) _buffer ~= ")";
-
-        _buffer ~= " " ~ parseBinaryOperator(node.operator) ~ " ";
-
-        if(node.operator == BinaryOperator.or) _buffer ~= "(";
-        node.right.accept(this);
-        if(node.operator == BinaryOperator.or) _buffer ~= ")";
     }
 
     void visit(immutable(ColumnNode) node)
@@ -207,6 +201,19 @@ public:
         _buffer ~= formatLiteral(node);
     }
 
+    void visit(immutable(LogicalNode) node)
+    {
+        if(node.operator == LogicalOperator.or) _buffer ~= "(";
+        node.left.accept(this);
+        if(node.operator == LogicalOperator.or) _buffer ~= ")";
+
+        _buffer ~= " " ~ node.operator ~ " ";
+
+        if(node.operator == LogicalOperator.or) _buffer ~= "(";
+        node.right.accept(this);
+        if(node.operator == LogicalOperator.or) _buffer ~= ")";
+    }
+
     void visit(immutable(NamedWindowNode) node)
     {
         _buffer ~= node.name ~ " AS ";
@@ -257,6 +264,13 @@ public:
     void visit(immutable(ProjectionNode) node)
     {
         node.projections.accept(this);
+    }
+
+    void visit(immutable(RelationalNode) node)
+    {
+        node.left.accept(this);
+        _buffer ~= " " ~ node.operator ~ " ";
+        node.right.accept(this);
     }
 
     void visit(immutable(ReturningNode) node)
@@ -433,6 +447,11 @@ public:
     }
 
 protected:
+    string formatArithmeticOperator(ArithmeticOperator operator)
+    {
+        return operator == ArithmeticOperator.bitXor ? "#" : cast(string) operator;
+    }
+
     string padded(string keyword)
     {
         if(_buffer.data.length > 0)
@@ -446,11 +465,6 @@ protected:
         }
 
         return keyword;
-    }
-
-    string parseBinaryOperator(BinaryOperator operator)
-    {
-        return operator == BinaryOperator.bitXor ? "#" : cast(string) operator;
     }
 }
 
