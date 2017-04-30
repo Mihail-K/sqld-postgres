@@ -206,11 +206,7 @@ public:
     {
         if(node.operator == LogicalOperator.or) _buffer ~= "(";
         node.left.accept(this);
-        if(node.operator == LogicalOperator.or) _buffer ~= ")";
-
         _buffer ~= " " ~ node.operator ~ " ";
-
-        if(node.operator == LogicalOperator.or) _buffer ~= "(";
         node.right.accept(this);
         if(node.operator == LogicalOperator.or) _buffer ~= ")";
     }
@@ -252,14 +248,16 @@ public:
 
     void visit(immutable(PostfixNode) node)
     {
+        _buffer ~= "(";
         node.operand.accept(this);
-        _buffer ~= " " ~ node.operator;
+        _buffer ~= " " ~ node.operator ~ ")";
     }
 
     void visit(immutable(PrefixNode) node)
     {
-        _buffer ~= node.operator ~ " ";
+        _buffer ~= "(" ~ node.operator ~ " (";
         node.operand.accept(this);
+        _buffer ~= "))";
     }
 
     void visit(immutable(ProjectionNode) node)
@@ -523,7 +521,7 @@ protected:
     auto n = u["id"].eq(p["user_id"]).or(p["id"].isNull);
 
     n.accept(v);
-    assert(v.sql == `("users"."id" = "posts"."user_id") OR ("posts"."id" IS NULL)`);
+    assert(v.sql == `("users"."id" = "posts"."user_id" OR ("posts"."id" IS NULL))`);
 }
 
 @system unittest
@@ -593,6 +591,25 @@ protected:
 
     n.accept(v);
     assert(v.sql == `ORDER BY "users"."name" ASC, "users"."email" DESC, "users"."created_at" ASC`);
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto u = table("users");
+    auto n = u["email"].isNotNull;
+
+    n.accept(v);
+    assert(v.sql == `("users"."email" IS NOT NULL)`);
+}
+
+@system unittest
+{
+    auto v = new PostgresVisitor;
+    auto n = new immutable PrefixNode(PrefixOperator.not, toExpression(true));
+
+    n.accept(v);
+    assert(v.sql == `(NOT ('t'))`);
 }
 
 @system unittest
