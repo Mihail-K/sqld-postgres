@@ -20,10 +20,13 @@ string quoteName(string input)
 }
 
 @property
-string quoteReference(string input)
+string quoteReference(string input, size_t limit = size_t.max)
 {
+    import std.range : tail;
+
     return input.splitter(".")
                 .map!(quoteName)
+                .tail(limit)
                 .joiner(".")
                 .to!(string);
 }
@@ -33,6 +36,9 @@ string quoteReference(string input)
     assert(quoteReference("users") == `"users"`);
     assert(quoteReference("users.id") == `"users"."id"`);
     assert(quoteReference(`users.i"d`) == `"users"."i""d"`);
+
+    assert(quoteReference(`public.users.id`) == `"public"."users"."id"`);
+    assert(quoteReference(`public.users.id`, 2) == `"users"."id"`);
 }
 
 @property
