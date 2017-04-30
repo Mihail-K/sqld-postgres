@@ -6,12 +6,13 @@ import sqld.postgres.format_literal;
 import sqld.postgres.visitor;
 
 import std.conv;
+import std.variant;
 
 struct PreparedSQL
 {
 private:
-    string   _sql;
-    string[] _parameters;
+    string                     _sql;
+    Algebraic!(LiteralTypes)[] _parameters;
 
 public:
     @property
@@ -21,7 +22,7 @@ public:
     }
 
     @property
-    const(string[]) parameters()
+    const(Algebraic!(LiteralTypes)[]) parameters()
     {
         return _parameters;
     }
@@ -30,11 +31,11 @@ public:
 class PostgresPreparedVisitor : PostgresVisitor
 {
 protected:
-    string[] _parameters;
+    Algebraic!(LiteralTypes)[] _parameters;
 
 public:
     @property
-    const(string[]) parameters()
+    const(Algebraic!(LiteralTypes)[]) parameters()
     {
         return _parameters;
     }
@@ -50,7 +51,7 @@ public:
     override void visit(immutable(ParameterNode) node)
     {
         _buffer     ~= "$" ~ (_parameters.length + 1).to!(string);
-        _parameters ~= formatLiteral(node.value);
+        _parameters ~= node.value.value;
     }
 }
 
@@ -70,6 +71,5 @@ public:
 
     n.accept(v);
     assert(v.sql == "$1");
-    assert(v.parameters == ["5"]);
-    assert(v.preparedSQL == PreparedSQL("$1", ["5"]));
+    assert(v.parameters == [Algebraic!(LiteralTypes)(5)]);
 }
